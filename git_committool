@@ -1,0 +1,101 @@
+#!/bin/bash
+
+####################################################################################
+##                                                                                ##
+## Git Committool [By Georg Gbessemehlan]                                         ##
+## File description:                                                              ##
+## Collect all modified or deleted files and push them with user commit messages  ##
+##                                                                                ##
+#===================================================================================
+#==      ================     ===================================================  =
+#=  ====  =====  ======  ===================================  ===  ==============  =
+#=  =======  =    =====  ========   ==  =  = ==  =  = ==  =    =    ==   ===   ==  =
+#=  ===========  ======  =======     =        =        =====  ===  ==     =     =  =
+#=  ===   =  ==  ======  =======  =  =  =  =  =  =  =  =  ==  ===  ==  =  =  =  =  =
+#=  ====  =  ==  ======  =======  =  =  =  =  =  =  =  =  ==  ===  ==  =  =  =  =  =
+#=   ==   =  ==  =======  ===  =  =  =  =  =  =  =  =  =  ==  ===  ==  =  =  =  =  =
+#==      ==  ==   =======     ===   ==  =  =  =  =  =  =  ==   ==   ==   ===   ==  =
+#===================================================================================
+
+echo -e '    _            _                                     
+   / _ o _)_    / ` _   _ _   _ _  o _)_ _)_ _   _   ) 
+   (__/ ( (_    (_. (_) ) ) ) ) ) ) ( (_  (_ (_) (_) (  
+                                                       \n'
+
+if [[ ! -d ".git" ]]; then
+    echo "This is not a valid git repository."
+    echo "Go to the root of a git repository and run the git_committool command again."
+    exit 1
+fi
+
+if [[ $(git status | grep modified:) ]]; then
+    number=$(git status | grep modified: | wc -l)
+    if [ $number -eq 1 ]; then
+        echo "1 file modified"
+    else
+        echo "$number files modified"
+    fi
+    git status | grep modified: |
+        while read -r  file
+        do
+            file_path=$(echo $file | sed -e 's/ //g' -e 's/\bmodified:\b//g')
+            file_name=${file_path##*/}
+            path=$(echo $file_path | sed "s/\b$file_name\b//g")
+            if [[ $path ]]; then
+                V_path=$path
+            else
+                V_path="root"
+            fi
+            echo "Path: $V_path    File: $file_name"
+            git add $file_path
+            echo "Enter a commit message:"
+            read REPLY < /dev/tty
+            if [[ $REPLY ]]; then
+                git commit -m "$REPLY"
+            else
+                git commit -m "Modify $file_name in $V_path"
+            fi
+        done
+    echo "Please wait..."
+    git push -u origin master
+    echo -e "All modified files have been updated in your repository\n"
+else
+    echo "[Modified]: Nothing to commit"
+fi
+
+if [[ $(git status | grep deleted:) ]]; then
+    number=$(git status | grep deleted: | wc -l)
+    if [ $number -eq 1 ]; then
+        echo "1 file deleted"
+    else
+        echo "$number files deleted"
+    fi
+    git status | grep deleted: |
+        while read -r  file
+        do
+            file_path=$(echo $file | sed -e 's/ //g' -e 's/\bdeleted:\b//g')
+            file_name=${file_path##*/}
+            path=$(echo $file_path | sed "s/\b$file_name\b//g")
+            if [[ $path ]]; then
+                V_path=$path
+            else
+                V_path="root"
+            fi
+            echo "Path: $V_path    File: $file_name"
+            git add $file_path
+            echo "Enter a commit message:"
+            read REPLY < /dev/tty
+            if [[ $REPLY ]]; then
+                git commit -m "$REPLY"
+            else
+                git commit -m "Remove $file_name in $V_path"
+            fi
+        done
+    echo "Please wait..."
+    git push -u origin master
+    echo -e "All deleted files have been removed of your repository\n"
+else
+    echo "[Deleted]: Nothing to commit"
+fi
+
+exit 0
