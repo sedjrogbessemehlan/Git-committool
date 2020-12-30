@@ -98,4 +98,39 @@ else
     echo "[Deleted]: Nothing to commit"
 fi
 
+if [[ $(git status | grep renamed:) ]]; then
+    number=$(git status | grep renamed: | wc -l)
+    if [ $number -eq 1 ]; then
+        echo "1 file renamed"
+    else
+        echo "$number files renamed"
+    fi
+    git status | grep renamed: |
+        while read -r  file
+        do
+            file_path=$(echo $file | sed -e 's/ //g' -e 's/\brenamed:\b//g')
+            file_name=${file_path##*/}
+            path=$(echo $file_path | sed "s/\b$file_name\b//g")
+            if [[ $path ]]; then
+                V_path=$path
+            else
+                V_path="root"
+            fi
+            echo "Path: $V_path    File: $file_name"
+            git add $file_path
+            echo "Enter a commit message:"
+            read REPLY < /dev/tty
+            if [[ $REPLY ]]; then
+                git commit -m "$REPLY"
+            else
+                git commit -m "Rename $file_name in $V_path"
+            fi
+        done
+    echo "Please wait..."
+    git push -u origin master
+    echo -e "All renamed files have been updated in your repository\n"
+else
+    echo "[Renamed]: Nothing to commit"
+fi
+
 exit 0
